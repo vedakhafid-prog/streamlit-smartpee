@@ -69,3 +69,12 @@ if st.button("🔍 Prediksi"):
 
     except Exception as e:
         st.error(f"Terjadi error: {e}")
+
+acc_knn = bundle["acc_knn"]
+acc_nb = bundle["acc_nb"]
+acc_svm = bundle["acc_svm"]
+
+st.subheader("📈 Akurasi Model")
+st.write(f"KNN: {acc_knn*100:.2f}%")
+st.write(f"Naive Bayes: {acc_nb*100:.2f}%")
+st.write(f"SVM: {acc_svm*100:.2f}%")
