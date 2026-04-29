@@ -78,13 +78,33 @@ print("NB:", accuracy_score(y_dm_test, pred_nb))
 print("SVM:", accuracy_score(y_ginjal_test, pred_svm))
 
 # =========================
+from sklearn.metrics import accuracy_score
+
+# KNN
+y_pred_knn = knn.predict(X_test)
+acc_knn = accuracy_score(y_test, y_pred_knn)
+
+# NB
+y_pred_nb = nb.predict(X_test)
+acc_nb = accuracy_score(y_test, y_pred_nb)
+
+# SVM
+y_pred_svm = svm.predict(X_test)
+acc_svm = accuracy_score(y_test, y_pred_svm)
+
+print("Akurasi KNN:", acc_knn)
+print("Akurasi NB:", acc_nb)
+print("Akurasi SVM:", acc_svm)
 # 9. SAVE MODEL (1 FILE)
 # =========================
-model_bundle = {
-    "knn_model": knn_model,
-    "nb_model": nb_model,
-    "svm_model": svm_model,
-    "scaler": scaler
+bundle = {
+    "knn_model": knn,
+    "nb_model": nb,
+    "svm_model": svm,
+    "scaler": scaler,
+    "acc_knn": acc_knn,
+    "acc_nb": acc_nb,
+    "acc_svm": acc_svm
 }
 
 with open("model_urine.sav", "wb") as f:
