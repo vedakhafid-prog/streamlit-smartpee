@@ -31,10 +31,11 @@ st.title("💧 Smart Pee Detection")
 
 st.write("Masukkan nilai pH dan warna urine (RGB)")
 
-pH = st.slider("pH", 4.0, 9.0, 6.0, step=0.1)
-R = st.slider("Red (R)", 0, 255, 150)
-G = st.slider("Green (G)", 0, 255, 150)
-B = st.slider("Blue (B)", 0, 255, 150)
+pH = st.number_input("pH", min_value=4.0, max_value=9.0, value=6.0, step=0.1)
+
+R = st.number_input("Red (R)", min_value=0, max_value=255, value=150)
+G = st.number_input("Green (G)", min_value=0, max_value=255, value=150)
+B = st.number_input("Blue (B)", min_value=0, max_value=255, value=150)
 
 # ========================
 # PREDIKSI
