@@ -4,11 +4,14 @@ import pickle
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import SVC
+
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # =========================
 # 1. LOAD DATA
@@ -16,9 +19,8 @@ from sklearn.svm import SVC
 df = pd.read_csv("dataset.csv")
 
 # =========================
-# 2. BUAT LABEL SESUAI TUJUAN
+# 2. LABELING
 # =========================
-# KNN (multi-class dehidrasi)
 def label_dehidrasi(pH):
     if pH < 5.0:
         return "Dehidrasi_Berat"
@@ -29,12 +31,10 @@ def label_dehidrasi(pH):
 
 df['label_dehidrasi'] = df['pH'].apply(label_dehidrasi)
 
-# NB (diabetes)
 df['label_diabetes'] = df['Label'].apply(
     lambda x: 1 if 'Diabetes' in str(x) else 0
 )
 
-# SVM (ginjal)
 df['label_ginjal'] = df['Label'].apply(
     lambda x: 1 if 'Ginjal' in str(x) else 0
 )
@@ -49,7 +49,7 @@ y_nb = df['label_diabetes']
 y_svm = df['label_ginjal']
 
 # =========================
-# 4. SPLIT DATA
+# 4. SPLIT
 # =========================
 X_train, X_test, y_knn_train, y_knn_test, y_nb_train, y_nb_test, y_svm_train, y_svm_test = train_test_split(
     X, y_knn, y_nb, y_svm,
@@ -76,12 +76,15 @@ nb_model.fit(X_train_scaled, y_nb_train)
 svm_model.fit(X_train_scaled, y_svm_train)
 
 # =========================
-# 7. EVALUASI
+# 7. PREDIKSI
 # =========================
 pred_knn = knn_model.predict(X_test_scaled)
 pred_nb = nb_model.predict(X_test_scaled)
 pred_svm = svm_model.predict(X_test_scaled)
 
+# =========================
+# 8. AKURASI
+# =========================
 print("\n=== AKURASI ===")
 acc_knn = accuracy_score(y_knn_test, pred_knn)
 acc_nb = accuracy_score(y_nb_test, pred_nb)
@@ -92,7 +95,41 @@ print("NB (Diabetes):", acc_nb)
 print("SVM (Ginjal):", acc_svm)
 
 # =========================
-# 8. SAVE MODEL
+# 9. EVALUASI DETAIL KNN
+# =========================
+print("\n=== HASIL KNN (3 KELAS) ===")
+
+print(f"Accuracy: {acc_knn*100:.2f}%")
+
+print("\nClassification Report:")
+print(classification_report(
+    y_knn_test,
+    pred_knn,
+    target_names=["Normal", "Dehidrasi Ringan", "Dehidrasi Berat"]
+))
+
+# =========================
+# 10. CONFUSION MATRIX KNN
+# =========================
+cm_knn = confusion_matrix(y_knn_test, pred_knn)
+
+plt.figure(figsize=(6,4))
+sns.heatmap(
+    cm_knn,
+    annot=True,
+    fmt='d',
+    cmap='Blues',
+    xticklabels=["Normal", "Dehidrasi Ringan", "Dehidrasi Berat"],
+    yticklabels=["Normal", "Dehidrasi Ringan", "Dehidrasi Berat"]
+)
+
+plt.title('Confusion Matrix - KNN (3 Kelas)')
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.show()
+
+# =========================
+# 11. SAVE MODEL
 # =========================
 model_bundle = {
     "knn_model": knn_model,
