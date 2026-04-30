@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 
 # ========================
-# LOAD MODEL (AMAN)
+# LOAD MODEL
 # ========================
 @st.cache_resource
 def load_model():
@@ -28,11 +28,9 @@ def rule_ginjal(pH):
 # UI
 # ========================
 st.title("💧 Smart Pee Detection")
-
 st.write("Masukkan nilai pH dan warna urine (RGB)")
 
 pH = st.number_input("pH", min_value=4.0, max_value=9.0, value=6.0, step=0.1)
-
 R = st.number_input("Red (R)", min_value=0, max_value=255, value=150)
 G = st.number_input("Green (G)", min_value=0, max_value=255, value=150)
 B = st.number_input("Blue (B)", min_value=0, max_value=255, value=150)
@@ -45,25 +43,43 @@ if st.button("🔍 Prediksi"):
         data = np.array([[pH, R, G, B]])
         data_scaled = scaler.transform(data)
 
-        # Prediksi
-        deh = knn.predict(data_scaled)[0]
-        dm = nb.predict(data_scaled)[0]
-        ginjal_ml = svm.predict(data_scaled)[0]
+        # ========================
+        # PREDIKSI MODEL
+        # ========================
+        hasil_knn = knn.predict(data_scaled)[0]   # STRING
+        hasil_nb = nb.predict(data_scaled)[0]     # 0 / 1
+        hasil_svm = svm.predict(data_scaled)[0]   # 0 / 1
 
-        # Rule + ML
+        # ========================
+        # RULE + ML (GINJAL)
+        # ========================
         ginjal_rule = rule_ginjal(pH)
-        ginjal_final = 1 if (ginjal_ml or ginjal_rule) else 0
+        ginjal_final = 1 if (hasil_svm or ginjal_rule) else 0
 
         # ========================
         # OUTPUT
         # ========================
         st.subheader("📊 Hasil Analisis")
 
-        st.success(f"Dehidrasi: {'Ya' if deh else 'Tidak'}")
-        st.success(f"Diabetes: {'Ya' if dm else 'Tidak'}")
+        # --- KNN (Dehidrasi 3 kelas) ---
+        if hasil_knn == "Normal":
+            st.success("Dehidrasi: Normal ✅")
+        elif hasil_knn == "Dehidrasi_Ringan":
+            st.warning("Dehidrasi: Ringan ⚠️")
+        elif hasil_knn == "Dehidrasi_Berat":
+            st.error("Dehidrasi: Berat 🚨")
+        else:
+            st.info(f"Dehidrasi: {hasil_knn}")
 
-        if ginjal_final:
-            st.error("Ginjal: Berisiko ⚠️")
+        # --- NB (Diabetes) ---
+        if hasil_nb == 1:
+            st.error("Diabetes: Terindikasi ⚠️")
+        else:
+            st.success("Diabetes: Normal ✅")
+
+        # --- SVM + Rule (Ginjal) ---
+        if ginjal_final == 1:
+            st.error("Ginjal: Terindikasi Gangguan ⚠️")
         else:
             st.success("Ginjal: Normal ✅")
 
