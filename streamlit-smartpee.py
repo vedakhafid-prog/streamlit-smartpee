@@ -3,85 +3,106 @@ import numpy as np
 import pickle
 
 # ========================
+# CONFIG
+# ========================
+MODEL_PATH = "model_urine.sav"
+
+# ========================
 # LOAD MODEL
 # ========================
 @st.cache_resource
-def load_model():
-    with open("model_urine.sav", "rb") as f:
-        bundle = pickle.load(f)
-    return bundle
+def load_model(path):
+    with open(path, "rb") as f:
+        return pickle.load(f)
 
-bundle = load_model()
+bundle = load_model(MODEL_PATH)
 
-knn = bundle["knn_model"]
-nb = bundle["nb_model"]
-svm = bundle["svm_model"]
+knn_model = bundle["knn_model"]
+nb_model = bundle["nb_model"]
+svm_model = bundle["svm_model"]
 scaler = bundle["scaler"]
 
 # ========================
-# RULE BASED
+# RULE ENGINE
 # ========================
-def rule_ginjal(pH):
+def rule_ginjal(pH: float) -> int:
     return 1 if (pH < 5 or pH > 8) else 0
+
+# ========================
+# PREDICTION ENGINE
+# ========================
+def predict(data):
+    data_scaled = scaler.transform(data)
+
+    hasil_knn = knn_model.predict(data_scaled)[0]
+    hasil_nb = nb_model.predict(data_scaled)[0]
+    hasil_svm = svm_model.predict(data_scaled)[0]
+
+    ginjal_rule = rule_ginjal(data[0][0])
+    ginjal_final = 1 if (hasil_svm or ginjal_rule) else 0
+
+    return {
+        "dehidrasi": hasil_knn,
+        "diabetes": hasil_nb,
+        "ginjal": ginjal_final
+    }
+
+# ========================
+# FORMAT OUTPUT
+# ========================
+def format_dehidrasi(label):
+    mapping = {
+        "Normal": ("Normal", "success"),
+        "Dehidrasi_Ringan": ("Ringan", "warning"),
+        "Dehidrasi_Berat": ("Berat", "error"),
+    }
+    return mapping.get(label, (label, "info"))
+
+def format_binary(value, positive_text):
+    if value == 1:
+        return positive_text, "error"
+    return "Normal", "success"
 
 # ========================
 # UI
 # ========================
-st.title("💧 Smart Pee Detection")
-st.write("Masukkan nilai pH dan warna urine (RGB)")
+st.set_page_config(page_title="Smart Pee Detection", layout="centered")
 
-pH = st.number_input("pH", min_value=4.0, max_value=9.0, value=6.0, step=0.1)
-R = st.number_input("Red (R)", min_value=0, max_value=255, value=150)
-G = st.number_input("Green (G)", min_value=0, max_value=255, value=150)
-B = st.number_input("Blue (B)", min_value=0, max_value=255, value=150)
+st.title("💧 Smart Pee Detection")
+st.caption("Deteksi kondisi urine berbasis pH dan warna (RGB)")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    pH = st.number_input("pH", 4.0, 9.0, 6.0, step=0.1)
+
+with col2:
+    R = st.number_input("R", 0, 255, 150)
+    G = st.number_input("G", 0, 255, 150)
+    B = st.number_input("B", 0, 255, 150)
 
 # ========================
-# PREDIKSI
+# RUN
 # ========================
 if st.button("🔍 Prediksi"):
     try:
         data = np.array([[pH, R, G, B]])
-        data_scaled = scaler.transform(data)
 
-        # ========================
-        # PREDIKSI MODEL
-        # ========================
-        hasil_knn = knn.predict(data_scaled)[0]   # STRING
-        hasil_nb = nb.predict(data_scaled)[0]     # 0 / 1
-        hasil_svm = svm.predict(data_scaled)[0]   # 0 / 1
+        result = predict(data)
 
-        # ========================
-        # RULE + ML (GINJAL)
-        # ========================
-        ginjal_rule = rule_ginjal(pH)
-        ginjal_final = 1 if (hasil_svm or ginjal_rule) else 0
-
-        # ========================
-        # OUTPUT
-        # ========================
         st.subheader("📊 Hasil Analisis")
 
-        # --- KNN (Dehidrasi 3 kelas) ---
-        if hasil_knn == "Normal":
-            st.success("Dehidrasi: Normal ✅")
-        elif hasil_knn == "Dehidrasi_Ringan":
-            st.warning("Dehidrasi: Ringan ⚠️")
-        elif hasil_knn == "Dehidrasi_Berat":
-            st.error("Dehidrasi: Berat 🚨")
-        else:
-            st.info(f"Dehidrasi: {hasil_knn}")
+        # --- Dehidrasi ---
+        text, level = format_dehidrasi(result["dehidrasi"])
+        getattr(st, level)(f"Dehidrasi: {text}")
 
-        # --- NB (Diabetes) ---
-        if hasil_nb == 1:
-            st.error("Diabetes: Terindikasi ⚠️")
-        else:
-            st.success("Diabetes: Normal ✅")
+        # --- Diabetes ---
+        text, level = format_binary(result["diabetes"], "Terindikasi Diabetes")
+        getattr(st, level)(f"Diabetes: {text}")
 
-        # --- SVM + Rule (Ginjal) ---
-        if ginjal_final == 1:
-            st.error("Ginjal: Terindikasi Gangguan ⚠️")
-        else:
-            st.success("Ginjal: Normal ✅")
+        # --- Ginjal ---
+        text, level = format_binary(result["ginjal"], "Gangguan Fungsi Ginjal")
+        getattr(st, level)(f"Ginjal: {text}")
 
     except Exception as e:
-        st.error(f"Terjadi error: {e}")
+        st.error(f"Error: {e}")
