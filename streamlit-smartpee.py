@@ -105,7 +105,7 @@ if st.button("🔍 Prediksi"):
         st.caption(f"DEBUG KNN: {result['dehidrasi']} ({type(result['dehidrasi'])})")
 
         # --- Dehidrasi ---
-        text, level = format_dehidrasi(result["Dehidrasi"])
+        text, level = format_dehidrasi(result["dehidrasi"])
         getattr(st, level)(f"Dehidrasi: {text}")
 
         # --- Diabetes ---
