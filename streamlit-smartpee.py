@@ -105,7 +105,7 @@ if st.button("🔍 Prediksi"):
         st.caption(f"DEBUG KNN: {result['dehidrasi']} ({type(result['dehidrasi'])})")
 
         # --- Dehidrasi ---
-        text, level = format_dehidrasi(result["dehidrasi"])
+        text, level = format_dehidrasi(result["Dehidrasi"])
         getattr(st, level)(f"Dehidrasi: {text}")
 
         # --- Diabetes ---
@@ -113,7 +113,7 @@ if st.button("🔍 Prediksi"):
         getattr(st, level)(f"Diabetes: {text}")
 
         # --- Ginjal ---
-        text, level = format_binary(result["ginjal"], "Gangguan Fungsi Ginjal")
+        text, level = format_binary(result["ginjal"], "Terindikasi Gangguan Fungsi Ginjal")
         getattr(st, level)(f"Ginjal: {text}")
 
     except Exception as e:
