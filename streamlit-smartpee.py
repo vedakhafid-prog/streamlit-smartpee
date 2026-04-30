@@ -51,12 +51,21 @@ def predict(data):
 # FORMAT OUTPUT
 # ========================
 def format_dehidrasi(label):
+    # HANDLE MODEL LAMA (0/1)
+    if isinstance(label, (int, np.integer)):
+        if label == 0:
+            return "Normal", "success"
+        elif label == 1:
+            return "Dehidrasi", "warning"
+
+    # HANDLE MODEL BARU (MULTI-CLASS)
     mapping = {
         "Normal": ("Normal", "success"),
-        "Dehidrasi_Ringan": ("Ringan", "warning"),
-        "Dehidrasi_Berat": ("Berat", "error"),
+        "Dehidrasi_Ringan": ("Dehidrasi Ringan", "warning"),
+        "Dehidrasi_Berat": ("Dehidrasi Berat", "error"),
     }
-    return mapping.get(label, (label, "info"))
+
+    return mapping.get(label, (str(label), "info"))
 
 def format_binary(value, positive_text):
     if value == 1:
@@ -92,12 +101,15 @@ if st.button("🔍 Prediksi"):
 
         st.subheader("📊 Hasil Analisis")
 
+        # DEBUG (biar kamu tahu model output apa)
+        st.caption(f"DEBUG KNN: {result['dehidrasi']} ({type(result['dehidrasi'])})")
+
         # --- Dehidrasi ---
         text, level = format_dehidrasi(result["dehidrasi"])
         getattr(st, level)(f"Dehidrasi: {text}")
 
         # --- Diabetes ---
-        text, level = format_binary(result["diabetes"], "Terindikasi Diabetes")
+        text, level = format_binary(result["diabetes"], "Terindikasi Diabetes Mellitus")
         getattr(st, level)(f"Diabetes: {text}")
 
         # --- Ginjal ---
