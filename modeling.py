@@ -16,27 +16,43 @@ from sklearn.svm import SVC
 df = pd.read_csv("dataset.csv")
 
 # =========================
-# 2. BUAT LABEL (JIKA PERLU)
+# 2. BUAT LABEL SESUAI TUJUAN
 # =========================
-if 'Label' in df.columns:
-    df['dehidrasi'] = df['Label'].apply(lambda x: 1 if 'Dehidrasi' in str(x) else 0)
-    df['diabetes']  = df['Label'].apply(lambda x: 1 if 'Diabetes' in str(x) else 0)
-    df['ginjal']    = df['Label'].apply(lambda x: 1 if 'Ginjal' in str(x) else 0)
+# KNN (multi-class dehidrasi)
+def label_dehidrasi(pH):
+    if pH < 5.0:
+        return "Dehidrasi_Berat"
+    elif 5.0 <= pH < 5.5:
+        return "Dehidrasi_Ringan"
+    else:
+        return "Normal"
+
+df['label_dehidrasi'] = df['pH'].apply(label_dehidrasi)
+
+# NB (diabetes)
+df['label_diabetes'] = df['Label'].apply(
+    lambda x: 1 if 'Diabetes' in str(x) else 0
+)
+
+# SVM (ginjal)
+df['label_ginjal'] = df['Label'].apply(
+    lambda x: 1 if 'Ginjal' in str(x) else 0
+)
 
 # =========================
 # 3. FITUR
 # =========================
 X = df[['pH', 'R', 'G', 'B']]
 
-y_deh = df['dehidrasi']
-y_dm = df['diabetes']
-y_ginjal = df['ginjal']
+y_knn = df['label_dehidrasi']
+y_nb = df['label_diabetes']
+y_svm = df['label_ginjal']
 
 # =========================
-# 4. SPLIT
+# 4. SPLIT DATA
 # =========================
-X_train, X_test, y_deh_train, y_deh_test, y_dm_train, y_dm_test, y_ginjal_train, y_ginjal_test = train_test_split(
-    X, y_deh, y_dm, y_ginjal,
+X_train, X_test, y_knn_train, y_knn_test, y_nb_train, y_nb_test, y_svm_train, y_svm_test = train_test_split(
+    X, y_knn, y_nb, y_svm,
     test_size=0.2,
     random_state=42
 )
@@ -49,65 +65,43 @@ X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
 # =========================
-# 6. RULE GINJAL
-# =========================
-def rule_ginjal(pH):
-    return 1 if (pH < 5.0 or pH > 8.0) else 0
-
-# =========================
-# 7. TRAIN MODEL
+# 6. TRAIN MODEL
 # =========================
 knn_model = KNeighborsClassifier(n_neighbors=5)
 nb_model = GaussianNB()
 svm_model = SVC(kernel='rbf')
 
-knn_model.fit(X_train_scaled, y_deh_train)
-nb_model.fit(X_train_scaled, y_dm_train)
-svm_model.fit(X_train_scaled, y_ginjal_train)
+knn_model.fit(X_train_scaled, y_knn_train)
+nb_model.fit(X_train_scaled, y_nb_train)
+svm_model.fit(X_train_scaled, y_svm_train)
 
 # =========================
-# 8. EVALUASI
+# 7. EVALUASI
 # =========================
 pred_knn = knn_model.predict(X_test_scaled)
 pred_nb = nb_model.predict(X_test_scaled)
 pred_svm = svm_model.predict(X_test_scaled)
 
-print("=== AKURASI ===")
-print("KNN:", accuracy_score(y_deh_test, pred_knn))
-print("NB:", accuracy_score(y_dm_test, pred_nb))
-print("SVM:", accuracy_score(y_ginjal_test, pred_svm))
+print("\n=== AKURASI ===")
+acc_knn = accuracy_score(y_knn_test, pred_knn)
+acc_nb = accuracy_score(y_nb_test, pred_nb)
+acc_svm = accuracy_score(y_svm_test, pred_svm)
+
+print("KNN (Dehidrasi):", acc_knn)
+print("NB (Diabetes):", acc_nb)
+print("SVM (Ginjal):", acc_svm)
 
 # =========================
-from sklearn.metrics import accuracy_score
-
-# KNN
-y_pred_knn = knn.predict(X_test)
-acc_knn = accuracy_score(y_test, y_pred_knn)
-
-# NB
-y_pred_nb = nb.predict(X_test)
-acc_nb = accuracy_score(y_test, y_pred_nb)
-
-# SVM
-y_pred_svm = svm.predict(X_test)
-acc_svm = accuracy_score(y_test, y_pred_svm)
-
-print("Akurasi KNN:", acc_knn)
-print("Akurasi NB:", acc_nb)
-print("Akurasi SVM:", acc_svm)
-# 9. SAVE MODEL (1 FILE)
+# 8. SAVE MODEL
 # =========================
-bundle = {
-    "knn_model": knn,
-    "nb_model": nb,
-    "svm_model": svm,
-    "scaler": scaler,
-    "acc_knn": acc_knn,
-    "acc_nb": acc_nb,
-    "acc_svm": acc_svm
+model_bundle = {
+    "knn_model": knn_model,
+    "nb_model": nb_model,
+    "svm_model": svm_model,
+    "scaler": scaler
 }
 
 with open("model_urine.sav", "wb") as f:
     pickle.dump(model_bundle, f)
 
-print("Model tersimpan sebagai model_urine.sav")
+print("\nModel berhasil disimpan!")
