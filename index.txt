@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Urine Monitoring System</title>
+</head>
+<body style="font-family:Arial;text-align:center;margin-top:100px;">
+
+    <h2>Sistem Monitoring Urine</h2>
+
+    <p>Silakan hubungkan ke WiFi berikut:</p>
+
+    <p><b>SSID:</b> UrineMonitor</p>
+    <p><b>Password:</b> 12345678</p>
+
+    <br>
+
+    <a href="http://192.168.1.100:8501">
+        <button>Buka Dashboard</button>
+    </a>
+
+</body>
+</html>
